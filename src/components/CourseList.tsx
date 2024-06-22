@@ -33,7 +33,7 @@ const CourseModalContent: React.FC<{ course: Course; onClose: () => void; onEnro
     event.preventDefault();
     
     try {
-      const { data, error } = await supabase.from('students').insert([
+      const { error } = await supabase.from('students').insert([
         { course_enrolled: course.course_name, name: studentName, age: studentAge, email: studentEmail }
       ]);
 

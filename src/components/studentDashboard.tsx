@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient'; // Ensure this file exports your Supabase client instance
+import './StudentDashboard.css'; // Import the CSS file
 
 const Dashboard: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [courseInfo, setCourseInfo] = useState<any>(null);
+  const [completed, setCompleted] = useState<boolean>(false);
   const [error, setError] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,7 +20,7 @@ const Dashboard: React.FC = () => {
       // Fetch student details
       const { data: student, error: studentError } = await supabase
         .from('students')
-        .select('course_enrolled')
+        .select('course_enrolled, completed')
         .eq('name', name)
         .eq('email', email)
         .single();
@@ -26,6 +28,8 @@ const Dashboard: React.FC = () => {
       if (studentError) throw studentError;
 
       if (student && student.course_enrolled) {
+        setCompleted(student.completed);
+
         // Fetch course information
         const { data: course, error: courseError } = await supabase
           .from('course_info')
@@ -51,6 +55,7 @@ const Dashboard: React.FC = () => {
         setError('No course enrollment found for the given name and email.');
       }
     } catch (error) {
+      
       setCourseInfo(null);
     }
   };
@@ -60,11 +65,27 @@ const Dashboard: React.FC = () => {
     fetchCourseDetails();
   };
 
+  const markAsCompleted = async () => {
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ completed: true })
+        .eq('name', name)
+        .eq('email', email);
+
+      if (error) throw error;
+
+      setCompleted(true);
+    } catch (error) {
+      
+    }
+  };
+
   return (
-    <div>
+    <div className="dashboard-container">
       <h1>Dashboard</h1>
       <form onSubmit={handleSubmit}>
-        <div>
+        <div className="form-group">
           <label htmlFor="name">Name:</label>
           <input
             type="text"
@@ -75,7 +96,7 @@ const Dashboard: React.FC = () => {
             required
           />
         </div>
-        <div>
+        <div className="form-group">
           <label htmlFor="email">Email:</label>
           <input
             type="email"
@@ -86,11 +107,11 @@ const Dashboard: React.FC = () => {
             required
           />
         </div>
-        <button type="submit">Submit</button>
+        <button type="submit" className="submit-button">Submit</button>
       </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
       {courseInfo && (
-        <div>
+        <div className="course-details">
           <h2>Course Details</h2>
           <p><strong>Instructor Name:</strong> {courseInfo.instructor_name}</p>
           <p><strong>Description:</strong> {courseInfo.description}</p>
@@ -101,6 +122,11 @@ const Dashboard: React.FC = () => {
           <p><strong>Prerequisites:</strong> {courseInfo.prerequisites}</p>
           <p><strong>Syllabus:</strong> {courseInfo.syllabus}</p>
           <p><strong>Likes:</strong> {courseInfo.likes}</p>
+          {completed ? (
+            <p className="completed-message">You have completed this course.</p>
+          ) : (
+            <button onClick={markAsCompleted} className="submit-button">Mark as Completed</button>
+          )}
         </div>
       )}
     </div>
