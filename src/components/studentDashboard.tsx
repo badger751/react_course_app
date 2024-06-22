@@ -1,66 +1,110 @@
-// StudentDashboard.tsx
-
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
-import CourseTile from './CourseTile'; // Assuming CourseTile component is defined
+import { supabase } from '../supabaseClient'; // Ensure this file exports your Supabase client instance
 
-const StudentDashboard: React.FC = () => { 
-    
-  const [studentName, setStudentName] = useState('');
-  const [studentEmail, setStudentEmail] = useState('');
-  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]); // Adjust type as per your schema
-  const [error, setError] = useState<string | null>(null);
+const Dashboard: React.FC = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [courseInfo, setCourseInfo] = useState<any>(null);
+  const [error, setError] = useState('');
 
-  const handleFormSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === 'name') setName(value);
+    if (name === 'email') setEmail(value);
+  };
 
+  const fetchCourseDetails = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch student details
+      const { data: student, error: studentError } = await supabase
         .from('students')
         .select('course_enrolled')
-        .eq('name', studentName)
-        .eq('email', studentEmail);
+        .eq('name', name)
+        .eq('email', email)
+        .single();
 
-      if (error) {
-        throw error;
-      }
+      if (studentError) throw studentError;
 
-      if (data && data.length > 0) {
-        setEnrolledCourses(data);
+      if (student && student.course_enrolled) {
+        // Fetch course information
+        const { data: course, error: courseError } = await supabase
+          .from('course_info')
+          .select(`
+            instructor_name,
+            description,
+            enrollment_status,
+            course_duration,
+            schedule,
+            location,
+            prerequisites,
+            syllabus,
+            likes
+          `)
+          .eq('course_name', student.course_enrolled)
+          .single();
+
+        if (courseError) throw courseError;
+
+        setCourseInfo(course);
+        setError('');
       } else {
-        setEnrolledCourses([]);
-        setError('No courses found for the given student details.');
+        setError('No course enrollment found for the given name and email.');
       }
     } catch (error) {
-      console.error('Error fetching enrolled courses:', error);
-      setError('Failed to fetch enrolled courses. Please try again.');
+      setCourseInfo(null);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchCourseDetails();
   };
 
   return (
     <div>
-      <h1>Student Dashboard</h1>
-      <form onSubmit={handleFormSubmit}>
-        <label>
-          Student Name:
-          <input type="text" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
-        </label>
-        <label>
-          Email:
-          <input type="email" value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} required />
-        </label>
+      <h1>Dashboard</h1>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="name">Name:</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={name}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="email">Email:</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={email}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
         <button type="submit">Submit</button>
       </form>
-
-      {error && <div className="error-message">{error}</div>}
-
-      <div className="course-list">
-        {enrolledCourses.map((course: any) => (
-          <CourseTile key={course.course_name} course={course.course_name} />
-        ))}
-      </div>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {courseInfo && (
+        <div>
+          <h2>Course Details</h2>
+          <p><strong>Instructor Name:</strong> {courseInfo.instructor_name}</p>
+          <p><strong>Description:</strong> {courseInfo.description}</p>
+          <p><strong>Enrollment Status:</strong> {courseInfo.enrollment_status}</p>
+          <p><strong>Course Duration:</strong> {courseInfo.course_duration}</p>
+          <p><strong>Schedule:</strong> {courseInfo.schedule}</p>
+          <p><strong>Location:</strong> {courseInfo.location}</p>
+          <p><strong>Prerequisites:</strong> {courseInfo.prerequisites}</p>
+          <p><strong>Syllabus:</strong> {courseInfo.syllabus}</p>
+          <p><strong>Likes:</strong> {courseInfo.likes}</p>
+        </div>
+      )}
     </div>
   );
 };
 
-export default StudentDashboard;
+export default Dashboard;
