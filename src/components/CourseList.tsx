@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getCourses } from '../services/courseService';
 import Modal from './Modal';
 import './CourseList.css'; // Import the CSS file
@@ -126,6 +127,8 @@ const CourseList: React.FC = () => {
       <button className="course-button" onClick={() => fetchCourses()} disabled={loading}>
         {loading ? 'Loading...' : 'Refresh Courses'}
       </button>
+
+      <Link to="/dashboard" className="dashboard-link">Go to Dashboard</Link>
 
       {error && <div className="error-message">Error: {error.message}</div>}
 

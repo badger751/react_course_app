@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient'; // Ensure this file exports your Supabase client instance
 import './StudentDashboard.css'; // Import the CSS file
+import { Link } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const [name, setName] = useState('');
@@ -129,6 +130,8 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       )}
+            <Link to="/" className="back-link">Back to Courses</Link>
+
     </div>
   );
 };
